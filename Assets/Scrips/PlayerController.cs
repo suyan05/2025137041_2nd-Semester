@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
@@ -44,14 +45,21 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         CheckGrounded();
+        Landing();
         Move();
-        Attack();
         UpdateAnimator();
-        HandleJump();
+        Attack();
+        Jump();
     }
 
     private void Move()
     {
+        if((isAttacking&&!canMoveWhileAttacking)||isLanding)
+        {
+            currentSpeed = 0;
+            return;
+        }
+
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
 
@@ -80,11 +88,9 @@ public class PlayerController : MonoBehaviour
             Quaternion targetRotation = Quaternion.LookRotation(moveDir);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotateSpeed * Time.deltaTime);
         }
-
         else
         {
             currentSpeed = 0;
-            
         }
     }
 
@@ -120,8 +126,18 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void HandleJump()
+    private void Jump()
     {
+        if (Input.GetButtonDown("Jump") && isGrounded)
+        {
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+
+            if(animator != null)
+            {
+                animator.SetTrigger("JumpTrigger");
+            }
+        }
+
         if (!isGrounded)
         {
             velocity.y += gravity * Time.deltaTime;
@@ -129,9 +145,40 @@ public class PlayerController : MonoBehaviour
         CC.Move(velocity * Time.deltaTime);
     }
 
-    private void Attack()
+    private void Landing()
     {
+        if(isLanding)
+        {
+            landingTimer -= Time.deltaTime;
 
+            if(landingTimer < 0)
+            {
+                isLanding = false;
+            }
+        }
     }
 
+    private void Attack()
+    {
+        if(isAttacking)
+        {
+            attackTimer -= Time.deltaTime;
+
+            if(attackTimer <= 0)
+            {
+                isAttacking = false;
+            }
+        }
+
+        if (Input.GetMouseButtonDown(0) && !isAttacking)
+        {
+            isAttacking = true;
+            attackTimer = attackDuration;
+
+            if(animator!= null)
+            {
+                animator.SetTrigger("AttackTrigger");
+            }
+        }
+    }
 }
