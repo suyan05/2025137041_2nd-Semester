@@ -9,6 +9,11 @@ public class PlayerController : MonoBehaviour
     public float runSpeed = 6f;
     public float rotateSpeed = 10f;
 
+    [Header("점프설정")]
+    public float jumpHeight = 2.0f;
+    public float gravity = -9.8f;
+    public float landingDuration = 0.3f;
+
     [Header("공격 설정")]
     public float attackDuration = 0.8f;
     public bool canMoveWhileAttacking = false;
@@ -19,9 +24,17 @@ public class PlayerController : MonoBehaviour
     private CharacterController CC;
     private Camera PlayerCamera;
 
+    //현재 상태 값
     private float currentSpeed;
     private bool isAttacking = false;
+    private bool isLanding = false;
+    private float landingTimer;
 
+    private Vector3 velocity;
+    private bool isGrounded;
+    private bool wasGrounded;
+    private float attackTimer;
+    
     private void Start()
     {
         CC = GetComponent<CharacterController>();
@@ -30,9 +43,11 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        CheckGrounded();
         Move();
-        UpdateAnimator();
         Attack();
+        UpdateAnimator();
+        HandleJump();
     }
 
     private void Move()
@@ -77,6 +92,41 @@ public class PlayerController : MonoBehaviour
     {
         float animatorSpeed = Mathf.Clamp01(currentSpeed / runSpeed);
         animator.SetFloat("Speed", animatorSpeed);
+        animator.SetBool("IsGround",isGrounded);
+
+        bool isFalling = !isGrounded && velocity.y < -0.1f;
+        animator.SetBool("IsFalling",isFalling);
+        animator.SetBool("IsLanding",isLanding);
+    }
+
+    private void CheckGrounded()
+    {
+        wasGrounded = isGrounded;
+        isGrounded = CC.isGrounded;
+        
+        if (!isGrounded & wasGrounded)
+        {
+            Debug.Log("떨어지기 시작");
+        }
+        if (isGrounded && velocity.y < 0)
+        {
+            velocity.y = -2.0f;
+
+            if (!wasGrounded && animator != null)
+            {
+                isLanding = true;
+                landingTimer = landingDuration;
+            }
+        }
+    }
+
+    private void HandleJump()
+    {
+        if (!isGrounded)
+        {
+            velocity.y += gravity * Time.deltaTime;
+        }
+        CC.Move(velocity * Time.deltaTime);
     }
 
     private void Attack()
