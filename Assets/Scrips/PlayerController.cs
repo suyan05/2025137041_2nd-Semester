@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
@@ -36,6 +33,8 @@ public class PlayerController : MonoBehaviour
     private bool wasGrounded;
     private float attackTimer;
     
+    private bool isUIMode = false;
+
     private void Start()
     {
         CC = GetComponent<CharacterController>();
@@ -44,12 +43,20 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
-        CheckGrounded();
-        Landing();
-        Move();
-        UpdateAnimator();
-        Attack();
-        Jump();
+        if(Input.GetKeyDown(KeyCode.Tab))
+        {
+            ToggeleCursorlock();
+        }
+
+        if(!isUIMode)
+        {
+            CheckGrounded();
+            Landing();
+            Move();
+            UpdateAnimator();
+            Attack();
+            Jump();
+        }
     }
 
     private void Move()
@@ -180,5 +187,32 @@ public class PlayerController : MonoBehaviour
                 animator.SetTrigger("AttackTrigger");
             }
         }
+    }
+
+    public void SetCurrLock(bool lockCursor)
+    {
+        if(lockCursor)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+            isUIMode = false;
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            isUIMode = true;
+        }
+    }
+
+    public void ToggeleCursorlock()
+    {
+        bool ShouldLock = Cursor.lockState != CursorLockMode.Locked;
+        SetCurrLock(ShouldLock);
+    }
+
+    public void SetUIMode(bool uiMode)
+    {        
+        SetCurrLock(!uiMode);
     }
 }
